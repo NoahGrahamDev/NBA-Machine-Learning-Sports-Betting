@@ -19,7 +19,7 @@ con.close()
 
 scores = data['Score']
 margin = data['Home-Team-Win']
-columns_to_drop = ['Score', 'Home-Team-Win', 'TEAM_NAME', 'OU', 'OU-Cover']
+columns_to_drop = ['Score', 'Home-Team-Win', 'TEAM_NAME', 'TEAM_NAME.1', 'Season', 'OU', 'OU-Cover']
 existing_columns = [col for col in columns_to_drop if col in data.columns]
 if 'Date' in data.columns:
     existing_columns.append('Date')
