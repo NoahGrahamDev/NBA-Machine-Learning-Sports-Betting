@@ -13,8 +13,11 @@ data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col=None)
 con.close()
 
 margin = data['Home-Team-Win']
-data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU-Cover', 'OU'],
-          axis=1, inplace=True)
+columns_to_drop = ['Score', 'Home-Team-Win', 'TEAM_NAME', 'OU-Cover', 'OU']
+existing_columns = [col for col in columns_to_drop if col in data.columns]
+if 'Date' in data.columns:
+    existing_columns.append('Date')
+data.drop(existing_columns, axis=1, inplace=True)
 
 data = data.values
 
@@ -47,4 +50,4 @@ for x in tqdm(range(100)):
     print(f"{acc}%")
     acc_results.append(acc)
     if acc == max(acc_results):
-        model.save_model('../../Models/XGBoost_{}%_NFL_ML.json'.format(acc))
+        model.save_model('../../Models/XGBoost_Models/XGBoost_{}%_NFL_ML.json'.format(acc))

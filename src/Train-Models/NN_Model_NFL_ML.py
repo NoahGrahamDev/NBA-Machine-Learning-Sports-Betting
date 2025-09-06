@@ -19,7 +19,11 @@ con.close()
 
 scores = data['Score']
 margin = data['Home-Team-Win']
-data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU', 'OU-Cover'], axis=1, inplace=True)
+columns_to_drop = ['Score', 'Home-Team-Win', 'TEAM_NAME', 'OU', 'OU-Cover']
+existing_columns = [col for col in columns_to_drop if col in data.columns]
+if 'Date' in data.columns:
+    existing_columns.append('Date')
+data.drop(existing_columns, axis=1, inplace=True)
 
 data = data.values
 data = data.astype(float)

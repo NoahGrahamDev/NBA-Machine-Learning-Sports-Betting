@@ -20,8 +20,26 @@ def fetch_betmgm(ttl_hash=None):
     del ttl_hash
     return fetch_game_data(sportsbook="betmgm")
 
-def fetch_game_data(sportsbook="fanduel"):
-    cmd = ["python", "main.py", "-xgb", f"-odds={sportsbook}"]
+@lru_cache()
+def fetch_nfl_fanduel(ttl_hash=None):
+    del ttl_hash
+    return fetch_game_data(sportsbook="fanduel", sport="nfl")
+
+@lru_cache()
+def fetch_nfl_draftkings(ttl_hash=None):
+    del ttl_hash
+    return fetch_game_data(sportsbook="draftkings", sport="nfl")
+
+@lru_cache()
+def fetch_nfl_betmgm(ttl_hash=None):
+    del ttl_hash
+    return fetch_game_data(sportsbook="betmgm", sport="nfl")
+
+def fetch_game_data(sportsbook="fanduel", sport="nba"):
+    if sport == "nfl":
+        cmd = ["python", "main.py", "-nfl", "-xgb", f"-odds={sportsbook}"]
+    else:
+        cmd = ["python", "main.py", "-xgb", f"-odds={sportsbook}"]
     stdout = subprocess.check_output(cmd, cwd="../").decode()
     data_re = re.compile(r'\n(?P<home_team>[\w ]+)(\((?P<home_confidence>[\d+\.]+)%\))? vs (?P<away_team>[\w ]+)(\((?P<away_confidence>[\d+\.]+)%\))?: (?P<ou_pick>OVER|UNDER) (?P<ou_value>[\d+\.]+) (\((?P<ou_confidence>[\d+\.]+)%\))?', re.MULTILINE)
     ev_re = re.compile(r'(?P<team>[\w ]+) EV: (?P<ev>[-\d+\.]+)', re.MULTILINE)
@@ -66,7 +84,15 @@ def index():
     draftkings = fetch_draftkings(ttl_hash=get_ttl_hash())
     betmgm = fetch_betmgm(ttl_hash=get_ttl_hash())
 
-    return render_template('index.html', today=date.today(), data={"fanduel": fanduel, "draftkings": draftkings, "betmgm": betmgm})
+    return render_template('index.html', today=date.today(), data={"fanduel": fanduel, "draftkings": draftkings, "betmgm": betmgm}, sport="nba")
+
+@app.route("/nfl")
+def nfl_index():
+    nfl_fanduel = fetch_nfl_fanduel(ttl_hash=get_ttl_hash())
+    nfl_draftkings = fetch_nfl_draftkings(ttl_hash=get_ttl_hash())
+    nfl_betmgm = fetch_nfl_betmgm(ttl_hash=get_ttl_hash())
+
+    return render_template('index.html', today=date.today(), data={"fanduel": nfl_fanduel, "draftkings": nfl_draftkings, "betmgm": nfl_betmgm}, sport="nfl")
 
 
 
@@ -146,6 +172,25 @@ def team_data(team_name):
     # Fetch and return the player data
     result = get_player_data(team_abv)
     return jsonify(result)
+
+@app.route("/nfl-team-data/<team_name>")
+def nfl_team_data(team_name):
+    team_abv = nfl_team_abbreviations.get(team_name)
+    
+    if not team_abv:
+        return jsonify({
+            'success': False,
+            'error': f'NFL team abbreviation not found for {team_name}'
+        })
+    
+    return jsonify({
+        'success': True,
+        'team': {
+            'name': team_name,
+            'abbreviation': team_abv,
+            'sport': 'NFL'
+        }
+    })
 
 
     
@@ -250,4 +295,39 @@ team_abbreviations = {
     'Golden State Warriors': 'GS',
     'Memphis Grizzlies': 'MEM',
     'Los Angeles Lakers': 'LAL'
+}
+
+nfl_team_abbreviations = {
+    'Arizona Cardinals': 'ARI',
+    'Atlanta Falcons': 'ATL',
+    'Baltimore Ravens': 'BAL',
+    'Buffalo Bills': 'BUF',
+    'Carolina Panthers': 'CAR',
+    'Chicago Bears': 'CHI',
+    'Cincinnati Bengals': 'CIN',
+    'Cleveland Browns': 'CLE',
+    'Dallas Cowboys': 'DAL',
+    'Denver Broncos': 'DEN',
+    'Detroit Lions': 'DET',
+    'Green Bay Packers': 'GB',
+    'Houston Texans': 'HOU',
+    'Indianapolis Colts': 'IND',
+    'Jacksonville Jaguars': 'JAX',
+    'Kansas City Chiefs': 'KC',
+    'Las Vegas Raiders': 'LV',
+    'Los Angeles Chargers': 'LAC',
+    'Los Angeles Rams': 'LAR',
+    'Miami Dolphins': 'MIA',
+    'Minnesota Vikings': 'MIN',
+    'New England Patriots': 'NE',
+    'New Orleans Saints': 'NO',
+    'New York Giants': 'NYG',
+    'New York Jets': 'NYJ',
+    'Philadelphia Eagles': 'PHI',
+    'Pittsburgh Steelers': 'PIT',
+    'San Francisco 49ers': 'SF',
+    'Seattle Seahawks': 'SEA',
+    'Tampa Bay Buccaneers': 'TB',
+    'Tennessee Titans': 'TEN',
+    'Washington Commanders': 'WAS'
 }
