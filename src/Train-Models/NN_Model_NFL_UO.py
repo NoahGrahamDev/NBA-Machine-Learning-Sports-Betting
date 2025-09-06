@@ -10,7 +10,7 @@ current_time = str(time.time())
 
 tensorboard = TensorBoard(log_dir='../../Logs/{}'.format(current_time))
 earlyStopping = EarlyStopping(monitor='val_loss', patience=15, verbose=0, mode='min')
-mcp_save = ModelCheckpoint('../../Models/Trained-Model-NFL-UO-' + current_time, save_best_only=True, monitor='val_loss', mode='min')
+mcp_save = ModelCheckpoint('../../Models/Trained-Model-NFL-UO-' + current_time + '.keras', save_best_only=True, monitor='val_loss', mode='min')
 
 dataset = "nfl_dataset_2019-24"
 con = sqlite3.connect("../../Data/NFLDataset.sqlite")
