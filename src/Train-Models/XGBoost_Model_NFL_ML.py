@@ -13,7 +13,7 @@ data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col=None)
 con.close()
 
 margin = data['Home-Team-Win']
-columns_to_drop = ['Score', 'Home-Team-Win', 'TEAM_NAME', 'OU-Cover', 'OU']
+columns_to_drop = ['Score', 'Home-Team-Win', 'TEAM_NAME', 'TEAM_NAME.1', 'Season', 'OU-Cover', 'OU']
 existing_columns = [col for col in columns_to_drop if col in data.columns]
 if 'Date' in data.columns:
     existing_columns.append('Date')
