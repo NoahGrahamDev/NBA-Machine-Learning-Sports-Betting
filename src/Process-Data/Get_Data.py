@@ -9,12 +9,11 @@ import toml
 
 sys.path.insert(1, os.path.join(sys.path[0], '../..'))
 from src.Utils.tools import get_nfl_json_data, to_nfl_data_frame
+from src.Utils.api_keys import get_nfl_api_key
 
 config = toml.load("../../config.toml")
 
-nfl_api_key = os.getenv('NFL_API_KEY')
-if not nfl_api_key:
-    print("Warning: NFL_API_KEY environment variable not set. API calls may fail.")
+nfl_api_key = get_nfl_api_key()
 
 con = sqlite3.connect("../../Data/NFLTeamData.sqlite")
 
