@@ -23,7 +23,41 @@ games_header = {
 }
 
 
+def get_nfl_json_data_thesportsdb(season, week=None):
+    """
+    Fetch NFL data from TheSportsDB API
+    Args:
+        season: NFL season year (e.g., 2019, 2020, etc.)
+        week: Optional week number (not used in TheSportsDB, gets full season)
+    Returns:
+        List of game events for the season
+    """
+    base_url = "https://www.thesportsdb.com/api/v1/json/123"
+    url = f"{base_url}/eventsseason.php?id=4391&s={season}"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        
+        events = data.get('events', [])
+        if not events:
+            print(f"No events found for season {season}")
+            return []
+            
+        print(f"Retrieved {len(events)} games for {season} season")
+        return events
+        
+    except Exception as e:
+        print(f"Error fetching NFL data from TheSportsDB: {e}")
+        return []
+
 def get_nfl_json_data(url, api_key=None):
+    """
+    Legacy function for backward compatibility
+    This function is deprecated - use get_nfl_json_data_thesportsdb instead
+    """
+    print("Warning: get_nfl_json_data is deprecated. Use get_nfl_json_data_thesportsdb instead.")
     headers = nfl_api_headers.copy()
     if api_key:
         headers['Ocp-Apim-Subscription-Key'] = api_key
@@ -52,7 +86,40 @@ def get_todays_games_json(url):
     return json.get('gs').get('g')
 
 
+def to_nfl_data_frame_thesportsdb(json_data):
+    """
+    Convert TheSportsDB JSON data to DataFrame
+    Maps TheSportsDB fields to standardized column names
+    """
+    if not json_data:
+        return pd.DataFrame()
+    
+    mapped_data = []
+    for game in json_data:
+        mapped_game = {
+            'GameKey': game.get('idEvent', ''),
+            'Season': int(game.get('strSeason', 0)) if game.get('strSeason') else 0,
+            'Date': game.get('dateEvent', ''),
+            'HomeTeam': game.get('strHomeTeam', ''),
+            'AwayTeam': game.get('strAwayTeam', ''),
+            'HomeScore': int(game.get('intHomeScore', 0)) if game.get('intHomeScore') else 0,
+            'AwayScore': int(game.get('intAwayScore', 0)) if game.get('intAwayScore') else 0,
+            'HomeTeamID': game.get('idHomeTeam', ''),
+            'AwayTeamID': game.get('idAwayTeam', ''),
+            'EventName': game.get('strEvent', ''),
+            'League': game.get('strLeague', 'NFL')
+        }
+        mapped_data.append(mapped_game)
+    
+    df = pd.DataFrame(mapped_data)
+    return df
+
 def to_nfl_data_frame(data):
+    """
+    Legacy function for backward compatibility
+    This function is deprecated - use to_nfl_data_frame_thesportsdb instead
+    """
+    print("Warning: to_nfl_data_frame is deprecated. Use to_nfl_data_frame_thesportsdb instead.")
     if not data:
         return pd.DataFrame()
     

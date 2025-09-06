@@ -8,35 +8,27 @@ from datetime import datetime, timedelta
 import toml
 
 sys.path.insert(1, os.path.join(sys.path[0], '../..'))
-from src.Utils.tools import get_nfl_json_data, to_nfl_data_frame
-from src.Utils.api_keys import get_nfl_api_key
+from src.Utils.tools import get_nfl_json_data_thesportsdb, to_nfl_data_frame_thesportsdb
 
 config = toml.load("../../config.toml")
-
-nfl_api_key = get_nfl_api_key()
 
 con = sqlite3.connect("../../Data/NFLTeamData.sqlite")
 
 for season_key, season_config in config['get-nfl-data'].items():
-    start_week = season_config['start_week']
-    end_week = season_config['end_week']
+    print(f"Getting NFL data: {season_key} season")
     
-    for week in range(start_week, end_week + 1):
-        print(f"Getting NFL data: {season_key} Week {week}")
-        
-        team_stats_url = config['nfl_scores_url'].format(
-            season=season_key, 
-            week=week
-        )
-        
-        raw_data = get_nfl_json_data(team_stats_url, nfl_api_key)
-        df = to_nfl_data_frame(raw_data)
-        
+    json_data = get_nfl_json_data_thesportsdb(season_key)
+    
+    if json_data:
+        df = to_nfl_data_frame_thesportsdb(json_data)
         if not df.empty:
-            df['Season'] = season_key
-            df['Week'] = week
-            df.to_sql(f"{season_key}_week_{week}", con, if_exists="replace")
-        
-        time.sleep(random.randint(2, 5))
+            df.to_sql("team_scores", con, if_exists="append", index=False)
+            print(f"Saved {len(df)} games for {season_key} season")
+        else:
+            print(f"No data to save for {season_key} season")
+    else:
+        print(f"Failed to retrieve data for {season_key} season")
+    
+    time.sleep(2)
 
 con.close()
