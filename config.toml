@@ -41,6 +41,11 @@ thesportsdb_season_events = "https://www.thesportsdb.com/api/v1/json/123/eventss
         start_week = 1
         end_week = 18
         season_type = "REG"
+        
+    [get-nfl-data.2025]
+        start_week = 1
+        end_week = 18
+        season_type = "REG"
 
 [get-nfl-odds-data]
     [get-nfl-odds-data.2023]
@@ -49,6 +54,11 @@ thesportsdb_season_events = "https://www.thesportsdb.com/api/v1/json/123/eventss
         season_type = "REG"
         
     [get-nfl-odds-data.2024]
+        start_week = 1
+        end_week = 18
+        season_type = "REG"
+        
+    [get-nfl-odds-data.2025]
         start_week = 1
         end_week = 18
         season_type = "REG"
@@ -80,6 +90,11 @@ thesportsdb_season_events = "https://www.thesportsdb.com/api/v1/json/123/eventss
         season_type = "REG"
         
     [create-nfl-games.2024]
+        start_week = 1
+        end_week = 18
+        season_type = "REG"
+        
+    [create-nfl-games.2025]
         start_week = 1
         end_week = 18
         season_type = "REG"
