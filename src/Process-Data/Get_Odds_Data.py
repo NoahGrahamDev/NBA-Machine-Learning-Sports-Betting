@@ -16,9 +16,9 @@ sportsbook = 'fanduel'
 sport = 'nfl'
 df_data = []
 
-config = toml.load("config.toml")
+config = toml.load("../../config.toml")
 
-con = sqlite3.connect("Data/NFLOddsData.sqlite")
+con = sqlite3.connect("../../Data/NFLOddsData.sqlite")
 
 for season_key, season_config in config['get-nfl-odds-data'].items():
     start_week = season_config['start_week']
