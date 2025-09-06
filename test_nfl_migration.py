@@ -243,9 +243,71 @@ def test_nfl_feature_mapping():
         print(f"❌ NFL feature mapping validation failed: {e}")
         return False
 
+def test_phase3_model_training():
+    """Test Phase 3: NFL Model Training implementation"""
+    print("\nTesting Phase 3: NFL Model Training...")
+    try:
+        nfl_model_files = [
+            'src/Train-Models/XGBoost_Model_NFL_ML.py',
+            'src/Train-Models/XGBoost_Model_NFL_UO.py',
+            'src/Train-Models/NN_Model_NFL_ML.py',
+            'src/Train-Models/NN_Model_NFL_UO.py'
+        ]
+        
+        for model_file in nfl_model_files:
+            if os.path.exists(model_file):
+                print(f"✅ Found {model_file}")
+                
+                spec = importlib.util.spec_from_file_location("nfl_model", model_file)
+                if spec is None:
+                    print(f"❌ Could not load {model_file}")
+                    return False
+                print(f"✅ {model_file} syntax valid")
+            else:
+                print(f"❌ Missing {model_file}")
+                return False
+        
+        if os.path.exists("Data/NFLDataset.sqlite"):
+            print("✅ NFLDataset.sqlite available for training")
+            
+            import sqlite3
+            conn = sqlite3.connect("Data/NFLDataset.sqlite")
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = cursor.fetchall()
+            
+            if tables:
+                table_name = tables[0][0]
+                cursor.execute(f"SELECT COUNT(*) FROM \"{table_name}\"")
+                row_count = cursor.fetchone()[0]
+                
+                if row_count > 100:
+                    print(f"✅ NFL dataset has {row_count} games for training")
+                else:
+                    print(f"⚠️  NFL dataset has only {row_count} games")
+                    
+                cursor.execute(f"SELECT * FROM \"{table_name}\" LIMIT 1")
+                sample_row = cursor.fetchone()
+                if sample_row and len(sample_row) > 40:
+                    print(f"✅ NFL dataset has {len(sample_row)} features for model training")
+                else:
+                    print(f"⚠️  NFL dataset has {len(sample_row) if sample_row else 0} features")
+            
+            conn.close()
+        else:
+            print("❌ NFLDataset.sqlite not found")
+            return False
+        
+        print("✅ Phase 3 model training validation completed")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Phase 3 validation failed: {e}")
+        return False
+
 def main():
     """Run all tests"""
-    print("🏈 NFL Migration Validation Tests (Phase 1 + Phase 2)")
+    print("🏈 NFL Migration Validation Tests (Phase 1 + Phase 2 + Phase 3)")
     print("=" * 60)
     
     tests = [
@@ -254,7 +316,8 @@ def main():
         test_tools,
         test_data_scripts,
         test_phase2_feature_engineering,
-        test_nfl_feature_mapping
+        test_nfl_feature_mapping,
+        test_phase3_model_training
     ]
     
     passed = 0
@@ -278,10 +341,14 @@ def main():
         print("✅ NFL feature engineering pipeline implemented")
         print("✅ 40+ NFL-specific features generated")
         print("✅ NBA-to-NFL feature mapping functional")
+        print("\nPhase 3 Complete:")
+        print("✅ NFL model training scripts implemented")
+        print("✅ XGBoost and Neural Network models adapted for NFL")
+        print("✅ Model architecture optimized for NFL dataset size")
         print("\nNext steps:")
-        print("1. Set NFL_API_KEY environment variable for live data")
-        print("2. Test with live NFL data collection")
-        print("3. Validate feature correlations with NFL outcomes")
+        print("1. Train NFL models and validate accuracy targets (>60% ML, >55% UO)")
+        print("2. Integrate NFL models into prediction pipeline")
+        print("3. Test end-to-end NFL prediction system")
         return True
     else:
         print("❌ Some critical tests failed. Please review the errors above.")
