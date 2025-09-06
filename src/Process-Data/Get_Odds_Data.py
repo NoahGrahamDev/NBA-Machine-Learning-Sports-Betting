@@ -13,7 +13,7 @@ sys.path.insert(1, os.path.join(sys.path[0], '../..'))
 from src.Utils.Dictionaries import nfl_team_index_current
 
 sportsbook = 'fanduel'
-sport = 'nfl'
+sport = 'NFL'
 df_data = []
 
 config = toml.load("../../config.toml")
