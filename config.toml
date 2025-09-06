@@ -1,9 +1,15 @@
+# Legacy sportsdata.io URLs (deprecated - subscription required)
 nfl_api_base_url = "https://api.sportsdata.io/v3/nfl"
 nfl_teams_url = "https://api.sportsdata.io/v3/nfl/scores/json/Teams"
 nfl_standings_url = "https://api.sportsdata.io/v3/nfl/scores/json/Standings/{season}"
 nfl_schedules_url = "https://api.sportsdata.io/v3/nfl/scores/json/Schedules/{season}"
 nfl_scores_url = "https://api.sportsdata.io/v3/nfl/scores/json/ScoresByWeek/{season}/{week}"
 nfl_team_stats_url = "https://api.sportsdata.io/v3/nfl/stats/json/TeamSeasonStats/{season}"
+
+# TheSportsDB API endpoints (free, no API key required)
+thesportsdb_base_url = "https://www.thesportsdb.com/api/v1/json/123"
+thesportsdb_nfl_league_id = "4391"
+thesportsdb_season_events = "https://www.thesportsdb.com/api/v1/json/123/eventsseason.php?id=4391&s={season}"
 
 [get-nfl-data]
     [get-nfl-data.2019]
