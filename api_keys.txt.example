@@ -1,0 +1,11 @@
+# API Keys Configuration File
+# Copy this file to 'api_keys.txt' and add your actual API keys
+# Format: KEY_NAME=your_api_key_value
+# Lines starting with # are comments and will be ignored
+
+# SportsData.io NFL API Key
+# Get your key from: https://sportsdata.io/
+NFL_API_KEY=your_sportsdata_io_api_key_here
+
+# Add other API keys as needed
+# EXAMPLE_API_KEY=your_example_key_here
