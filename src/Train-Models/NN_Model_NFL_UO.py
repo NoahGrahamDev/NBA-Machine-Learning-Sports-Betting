@@ -19,7 +19,11 @@ con.close()
 
 OU = data['OU-Cover']
 total = data['OU']
-data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU-Cover', 'OU'], axis=1, inplace=True)
+columns_to_drop = ['Score', 'Home-Team-Win', 'TEAM_NAME', 'OU-Cover', 'OU']
+existing_columns = [col for col in columns_to_drop if col in data.columns]
+if 'Date' in data.columns:
+    existing_columns.append('Date')
+data.drop(existing_columns, axis=1, inplace=True)
 
 data['OU'] = np.asarray(total)
 data = data.values
