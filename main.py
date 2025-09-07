@@ -132,6 +132,11 @@ def createTodaysNFLGames(games, df, odds):
         stats['Current-Week'] = current_week
         match_data.append(stats)
 
+    if not match_data:
+        print("Warning: No valid games could be created with available team data.")
+        print("This may be due to missing teams in the database for the current week.")
+        return None, [], None, [], []
+    
     games_data_frame = pd.concat(match_data, ignore_index=True, axis=1)
     games_data_frame = games_data_frame.T
 
