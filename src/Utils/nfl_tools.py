@@ -25,6 +25,7 @@ def load_nfl_team_stats_from_sqlite():
     """Load current NFL team stats from SQLite database for predictions"""
     import sqlite3
     import pandas as pd
+    import numpy as np
     
     try:
         con = sqlite3.connect('Data/NFLDataset.sqlite')
@@ -38,7 +39,7 @@ def load_nfl_team_stats_from_sqlite():
                 query = f'''
                 SELECT * FROM "{table_name}" 
                 WHERE Season = "2024" 
-                ORDER BY Week DESC
+                ORDER BY Week DESC, TEAM_NAME
                 '''
                 data = pd.read_sql_query(query, con)
                 if not data.empty:
@@ -52,50 +53,66 @@ def load_nfl_team_stats_from_sqlite():
             con.close()
             return pd.DataFrame()
         
-        available_weeks = sorted(data['Week'].unique(), reverse=True)
-        team_df = pd.DataFrame()
+        latest_week = data['Week'].max()
+        print(f"Using data from week {latest_week} (most recent available)")
         
-        for week in available_weeks:
-            week_data = data[data['Week'] == week]
-            team_stats = []
+        recent_data = data[data['Week'] == latest_week]
+        
+        team_stats = []
+        
+        for _, row in recent_data.iterrows():
+            home_team_data = {}
+            for col in row.index:
+                if not col.endswith('.1') and col not in ['Season', 'Week', 'Date', 'Score', 'Home-Team-Win', 'OU', 'OU-Cover', 'Days-Rest-Home', 'Days-Rest-Away']:
+                    home_team_data[col] = row[col]
+            if home_team_data.get('TEAM_NAME'):
+                games_played = home_team_data.get('W', 0) + home_team_data.get('L', 0)
+                if games_played > 0:
+                    for stat in ['PTS', 'PTS_ALLOWED', 'PASS_YDS', 'RUSH_YDS', 'SACKS', 'TURNOVERS']:
+                        if stat in home_team_data and pd.notna(home_team_data[stat]):
+                            home_team_data[stat] = home_team_data[stat] / games_played
+                    
+                    home_team_data['W_PCT'] = home_team_data.get('W', 0) / games_played
+                    home_team_data['GAMES_PLAYED'] = games_played
+                
+                home_team_data['Season'] = row['Season']
+                home_team_data['Week'] = row['Week']
+                home_team_data['Date'] = row['Date']
+                team_stats.append(home_team_data)
             
-            for _, row in week_data.iterrows():
-                home_team_data = {}
-                for col in row.index:
-                    if not col.endswith('.1') and col not in ['Season', 'Week', 'Date', 'Score', 'Home-Team-Win', 'OU', 'OU-Cover', 'Days-Rest-Home', 'Days-Rest-Away']:
-                        home_team_data[col] = row[col]
-                if home_team_data.get('TEAM_NAME'):
-                    team_stats.append(home_team_data)
-            
-            for _, row in week_data.iterrows():
-                away_team_data = {}
-                for col in row.index:
-                    if col.endswith('.1'):
-                        base_col = col[:-2]
-                        away_team_data[base_col] = row[col]
-                    elif col in ['Season', 'Week', 'Date']:
-                        away_team_data[col] = row[col]
-                if away_team_data.get('TEAM_NAME'):
-                    team_stats.append(away_team_data)
-            
-            week_df = pd.DataFrame(team_stats)
-            week_df = week_df.drop_duplicates(subset=['TEAM_NAME'], keep='first')
-            
-            if team_df.empty:
-                team_df = week_df.copy()
-                print(f"Loaded {len(team_df)} teams from {table_used} for week {week}")
-            else:
-                existing_teams = set(team_df['TEAM_NAME'])
-                new_teams = set(week_df['TEAM_NAME']) - existing_teams
-                if new_teams:
-                    missing_data = week_df[week_df['TEAM_NAME'].isin(new_teams)]
-                    team_df = pd.concat([team_df, missing_data], ignore_index=True)
-                    print(f"Added {len(new_teams)} missing teams from week {week}: {sorted(new_teams)}")
-            
-            if len(team_df) >= 30:
-                break
+            away_team_data = {}
+            for col in row.index:
+                if col.endswith('.1'):
+                    base_col = col[:-2]
+                    away_team_data[base_col] = row[col]
+            if away_team_data.get('TEAM_NAME'):
+                games_played = away_team_data.get('W', 0) + away_team_data.get('L', 0)
+                if games_played > 0:
+                    for stat in ['PTS', 'PTS_ALLOWED', 'PASS_YDS', 'RUSH_YDS', 'SACKS', 'TURNOVERS']:
+                        if stat in away_team_data and pd.notna(away_team_data[stat]):
+                            away_team_data[stat] = away_team_data[stat] / games_played
+                    
+                    away_team_data['W_PCT'] = away_team_data.get('W', 0) / games_played
+                    away_team_data['GAMES_PLAYED'] = games_played
+                
+                away_team_data['Season'] = row['Season']
+                away_team_data['Week'] = row['Week']
+                away_team_data['Date'] = row['Date']
+                team_stats.append(away_team_data)
+        
+        team_df = pd.DataFrame(team_stats)
+        if team_df.empty:
+            con.close()
+            return pd.DataFrame()
+        
+        team_df = team_df.drop_duplicates(subset=['TEAM_NAME'], keep='first')
+        
+        numeric_columns = team_df.select_dtypes(include=[np.number]).columns
+        team_df = team_df.copy()  # Avoid SettingWithCopyWarning
+        team_df[numeric_columns] = team_df[numeric_columns].fillna(0)
         
         con.close()
+        print(f"Loaded {len(team_df)} teams from {table_used} using most recent available data")
         print(f"Final dataset: {len(team_df)} teams total")
         return team_df
         

@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-dataset = "nfl_dataset_2019-24"
+dataset = "nfl_dataset_2019-2025"
 con = sqlite3.connect("Data/NFLDataset.sqlite")
 data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col=None)
 con.close()
@@ -22,32 +22,33 @@ data.drop(existing_columns, axis=1, inplace=True)
 data = data.values
 
 data = data.astype(float)
-acc_results = []
-for x in tqdm(range(100)):
-    x_train, x_test, y_train, y_test = train_test_split(data, margin, test_size=.1)
+x_train, x_test, y_train, y_test = train_test_split(data, margin, test_size=0.2, random_state=42)
 
-    train = xgb.DMatrix(x_train, label=y_train)
-    test = xgb.DMatrix(x_test, label=y_test)
+train = xgb.DMatrix(x_train, label=y_train)
+test = xgb.DMatrix(x_test, label=y_test)
 
-    param = {
-        'max_depth': 4,
-        'eta': 0.02,
-        'objective': 'multi:softprob',
-        'num_class': 2,
-        'subsample': 0.8,
-        'colsample_bytree': 0.8
-    }
-    epochs = 500
+param = {
+    'max_depth': 3,  # Reduced to prevent overfitting
+    'eta': 0.1,      # Increased learning rate for faster convergence
+    'objective': 'multi:softprob',
+    'num_class': 2,
+    'subsample': 0.8,
+    'colsample_bytree': 0.8,
+    'reg_alpha': 0.1,    # L1 regularization
+    'reg_lambda': 1.0,   # L2 regularization
+    'eval_metric': 'mlogloss'
+}
+epochs = 100  # Reduced epochs to prevent overfitting
 
-    model = xgb.train(param, train, epochs)
-    predictions = model.predict(test)
-    y = []
+evallist = [(train, 'train'), (test, 'eval')]
+model = xgb.train(param, train, epochs, evallist, early_stopping_rounds=10, verbose_eval=False)
 
-    for z in predictions:
-        y.append(np.argmax(z))
+predictions = model.predict(test)
+y = []
 
-    acc = round(accuracy_score(y_test, y) * 100, 1)
-    print(f"{acc}%")
-    acc_results.append(acc)
-    if acc == max(acc_results):
-        model.save_model('Models/XGBoost_Models/XGBoost_{}%_NFL_ML.json'.format(acc))
+for z in predictions:
+    y.append(np.argmax(z))
+
+acc = round(accuracy_score(y_test, y) * 100, 1)
+print(f"Final accuracy: {acc}%")
+model.save_model('Models/XGBoost_Models/XGBoost_{}%_NFL_ML.json'.format(acc))
