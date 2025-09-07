@@ -28,25 +28,12 @@ def load_nfl_team_stats_from_sqlite():
     
     try:
         con = sqlite3.connect('Data/NFLDataset.sqlite')
-        
-        tables_to_try = ["nfl_dataset_2019-2025", "nfl_dataset_2019-24"]
-        data = pd.DataFrame()
-        
-        for table_name in tables_to_try:
-            try:
-                query = f'''
-                SELECT * FROM "{table_name}" 
-                WHERE Season = "2024" 
-                ORDER BY Week DESC
-                '''
-                data = pd.read_sql_query(query, con)
-                if not data.empty:
-                    print(f"Using table: {table_name}")
-                    break
-            except Exception as table_error:
-                print(f"Table {table_name} not found, trying next...")
-                continue
-        
+        query = '''
+        SELECT * FROM "nfl_dataset_2019-2025" 
+        WHERE Season = "2024" 
+        ORDER BY Week DESC
+        '''
+        data = pd.read_sql_query(query, con)
         con.close()
         
         if data.empty:
