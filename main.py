@@ -23,7 +23,7 @@ data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
            'Season=2024-25&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
            'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
 
-nfl_data_url = 'https://api.sportsdata.io/v3/nfl/stats/json/TeamSeasonStats/2024'
+# nfl_data_url = 'https://api.sportsdata.io/v3/nfl/stats/json/TeamSeasonStats/2024'  # Deprecated
 
 
 def createTodaysGames(games, df, odds):
@@ -90,6 +90,10 @@ def createTodaysGames(games, df, odds):
     return data, todays_games_uo, frame_ml, home_team_odds, away_team_odds
 
 def createTodaysNFLGames(games, df, odds):
+    if df.empty:
+        print("Error: No NFL team data available. Cannot create predictions.")
+        return None, [], None, [], []
+    
     match_data = []
     todays_games_uo = []
     home_team_odds = []
@@ -113,8 +117,15 @@ def createTodaysNFLGames(games, df, odds):
             home_team_odds.append(input(home_team + ' odds: '))
             away_team_odds.append(input(away_team + ' odds: '))
 
-        home_team_series = df.iloc[nfl_team_index_current.get(home_team)]
-        away_team_series = df.iloc[nfl_team_index_current.get(away_team)]
+        home_team_data = df[df['TEAM_NAME'] == home_team]
+        away_team_data = df[df['TEAM_NAME'] == away_team]
+        
+        if home_team_data.empty or away_team_data.empty:
+            print(f"Warning: Missing data for {home_team} vs {away_team}")
+            continue
+            
+        home_team_series = home_team_data.iloc[0]
+        away_team_series = away_team_data.iloc[0]
         stats = pd.concat([home_team_series, away_team_series])
         
         current_week = get_nfl_current_week()
@@ -124,9 +135,10 @@ def createTodaysNFLGames(games, df, odds):
     games_data_frame = pd.concat(match_data, ignore_index=True, axis=1)
     games_data_frame = games_data_frame.T
 
-    columns_to_drop = ['TEAM_ID', 'TEAM_NAME']
+    columns_to_drop = ['TEAM_ID', 'TEAM_NAME', 'Season', 'Week', 'Date']
     existing_columns = [col for col in columns_to_drop if col in games_data_frame.columns]
     frame_ml = games_data_frame.drop(columns=existing_columns)
+    
     data = frame_ml.values
     data = data.astype(float)
 
@@ -158,9 +170,13 @@ def main():
             print("Manual NFL odds entry not yet implemented. Please use -odds flag.")
             return
             
-        data = get_nfl_json_data(nfl_data_url)
-        df = to_nfl_data_frame(data)
+        from src.Utils.nfl_tools import load_nfl_team_stats_from_sqlite
+        df = load_nfl_team_stats_from_sqlite()
         data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = createTodaysNFLGames(games, df, odds)
+        
+        if data is None:
+            print("Failed to create NFL games data. Exiting.")
+            return
         
         if args.nn:
             print("------------NFL Neural Network Model Predictions-----------")
