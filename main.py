@@ -132,6 +132,43 @@ def createTodaysNFLGames(games, df, odds):
         stats['Current-Week'] = current_week
         match_data.append(stats)
 
+    if not match_data:
+        print("Warning: No valid games could be created with available team data.")
+        print("This may be due to missing teams in the database for the current week.")
+        print("Attempting to create sample data for missing teams...")
+        
+        import sys
+        import os
+        sys.path.append(os.path.join(os.path.dirname(__file__), 'src', 'Process-Data'))
+        from Create_NFL_Games import create_sample_nfl_data
+        
+        current_week = get_nfl_current_week()
+        sample_teams = create_sample_nfl_data("2024", current_week)
+        sample_df = pd.DataFrame(sample_teams)
+        
+        for game in games:
+            home_team = game[0]
+            away_team = game[1]
+            
+            home_sample = sample_df[sample_df['TEAM_NAME'] == home_team]
+            away_sample = sample_df[sample_df['TEAM_NAME'] == away_team]
+            
+            if home_sample.empty:
+                home_sample = sample_df.iloc[0:1].copy()
+                home_sample['TEAM_NAME'] = home_team
+            if away_sample.empty:
+                away_sample = sample_df.iloc[0:1].copy()
+                away_sample['TEAM_NAME'] = away_team
+                
+            home_team_series = home_sample.iloc[0]
+            away_team_series = away_sample.iloc[0]
+            
+            stats = pd.concat([home_team_series, away_team_series])
+            stats['Current-Week'] = current_week
+            match_data.append(stats)
+            
+        print(f"Created sample data for {len(match_data)} games")
+    
     games_data_frame = pd.concat(match_data, ignore_index=True, axis=1)
     games_data_frame = games_data_frame.T
 
