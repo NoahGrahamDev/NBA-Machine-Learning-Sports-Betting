@@ -71,19 +71,37 @@ def get_nfl_json_data(url, api_key=None):
         return {}
 
 def get_json_data(url):
-    raw_data = requests.get(url, headers=nfl_api_headers)
     try:
+        raw_data = requests.get(url, headers=nfl_api_headers, timeout=10)
+        raw_data.raise_for_status()
         json = raw_data.json()
+    except requests.exceptions.Timeout:
+        print(f"Timeout error: NBA API took too long to respond")
+        return {}
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching NBA data: {e}")
+        return {}
     except Exception as e:
-        print(e)
+        print(f"Error parsing NBA data: {e}")
         return {}
     return json
 
 
 def get_todays_games_json(url):
-    raw_data = requests.get(url, headers=games_header)
-    json = raw_data.json()
-    return json.get('gs').get('g')
+    try:
+        raw_data = requests.get(url, headers=games_header, timeout=10)
+        raw_data.raise_for_status()
+        json = raw_data.json()
+        return json.get('gs', {}).get('g', [])
+    except requests.exceptions.Timeout:
+        print(f"Timeout error: NBA games API took too long to respond")
+        return []
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching today's games: {e}")
+        return []
+    except Exception as e:
+        print(f"Error parsing today's games: {e}")
+        return []
 
 
 def to_nfl_data_frame_thesportsdb(json_data):
