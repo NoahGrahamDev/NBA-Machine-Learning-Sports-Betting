@@ -50,8 +50,10 @@ def load_nfl_team_stats_from_sqlite():
             for col in row.index:
                 if not col.endswith('.1') and col not in ['Season', 'Week', 'Date', 'Score', 'Home-Team-Win', 'OU', 'OU-Cover', 'Days-Rest-Home', 'Days-Rest-Away']:
                     home_team_data[col] = row[col]
-            team_stats.append(home_team_data)
-            
+            if home_team_data.get('TEAM_NAME'):  # Only add if team name exists
+                team_stats.append(home_team_data)
+        
+        for _, row in current_data.iterrows():
             away_team_data = {}
             for col in row.index:
                 if col.endswith('.1'):
@@ -59,7 +61,8 @@ def load_nfl_team_stats_from_sqlite():
                     away_team_data[base_col] = row[col]
                 elif col in ['Season', 'Week', 'Date']:
                     away_team_data[col] = row[col]
-            team_stats.append(away_team_data)
+            if away_team_data.get('TEAM_NAME'):  # Only add if team name exists
+                team_stats.append(away_team_data)
         
         team_df = pd.DataFrame(team_stats)
         
