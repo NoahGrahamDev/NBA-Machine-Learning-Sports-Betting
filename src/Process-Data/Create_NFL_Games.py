@@ -245,13 +245,17 @@ def process_nfl_weekly_data(config, season, week):
 def create_nfl_games_dataset():
     """
     Main function to create NFL games dataset with 40+ features.
-    Processes seasons 2019-2024 with weekly structure.
+    Processes configured NFL seasons with weekly structure.
     """
     config = toml.load('../../config.toml')
     nfl_config = config.get('create-nfl-games', {})
     
+    seasons = sorted([season for season in nfl_config.keys() if season.isdigit()])
+    if not seasons:
+        seasons = ['2019', '2020', '2021', '2022', '2023', '2024']
+    
     print("Creating NFL Games Dataset with 40+ Features...")
-    print("Processing seasons 2019-2024 with weekly structure")
+    print(f"Processing seasons {min(seasons)}-{max(seasons)} with weekly structure")
     
     try:
         odds_conn = sqlite3.connect('../../Data/OddsData.sqlite')
@@ -261,8 +265,6 @@ def create_nfl_games_dataset():
         odds_conn = None
     
     all_games = []
-    
-    seasons = nfl_config.get('seasons', ['2019', '2020', '2021', '2022', '2023', '2024'])
     
     for season in seasons:
         print(f"\nProcessing NFL {season} season...")
@@ -297,7 +299,9 @@ def create_nfl_games_dataset():
     df = pd.DataFrame(all_games)
     
     dataset_conn = sqlite3.connect('../../Data/NFLDataset.sqlite')
-    table_name = 'nfl_dataset_2019-24'
+    min_season = min(seasons) if seasons else '2019'
+    max_season = max(seasons) if seasons else '2024'
+    table_name = f'nfl_dataset_{min_season}-{max_season}'
     
     df.to_sql(table_name, dataset_conn, if_exists='replace', index=False)
     dataset_conn.close()
