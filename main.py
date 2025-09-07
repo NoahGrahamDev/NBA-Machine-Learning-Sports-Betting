@@ -122,6 +122,7 @@ def createTodaysNFLGames(games, df, odds):
         
         if home_team_data.empty or away_team_data.empty:
             print(f"Warning: Missing data for {home_team} vs {away_team}")
+            print(f"Available teams in database: {sorted(df['TEAM_NAME'].unique().tolist())}")
             continue
             
         home_team_series = home_team_data.iloc[0]
