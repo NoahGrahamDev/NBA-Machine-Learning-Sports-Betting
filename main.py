@@ -139,7 +139,7 @@ def main():
     if args.nfl:
         print("🏈 NFL Mode Activated")
         if args.odds:
-            odds = SbrOddsProvider(sportsbook=args.odds).get_odds()
+            odds = SbrOddsProvider(sportsbook=args.odds, sport="NFL").get_odds()
             games = create_todays_games_from_odds(odds)
             if len(games) == 0:
                 print("No NFL games found.")
@@ -182,7 +182,7 @@ def main():
     else:
         print("🏀 NBA Mode (Default)")
         if args.odds:
-            odds = SbrOddsProvider(sportsbook=args.odds).get_odds()
+            odds = SbrOddsProvider(sportsbook=args.odds, sport="NBA").get_odds()
             games = create_todays_games_from_odds(odds)
             if len(games) == 0:
                 print("No games found.")
