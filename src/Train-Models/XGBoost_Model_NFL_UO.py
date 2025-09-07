@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 dataset = "nfl_dataset_2019-24"
-con = sqlite3.connect("../../Data/NFLDataset.sqlite")
+con = sqlite3.connect("Data/NFLDataset.sqlite")
 data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col=None)
 con.close()
 OU = data['OU-Cover']
@@ -52,4 +52,4 @@ for x in tqdm(range(100)):
     print(f"{acc}%")
     acc_results.append(acc)
     if acc == max(acc_results):
-        model.save_model('../../Models/XGBoost_Models/XGBoost_{}%_NFL_UO.json'.format(acc))
+        model.save_model('Models/XGBoost_Models/XGBoost_{}%_NFL_UO.json'.format(acc))

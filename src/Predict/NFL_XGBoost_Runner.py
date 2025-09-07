@@ -19,8 +19,8 @@ def _load_nfl_models():
     if not ml_models or not uo_models:
         raise FileNotFoundError("NFL XGBoost models not found. Please train models first.")
     
-    ml_model_path = max(ml_models, key=lambda x: float(x.split('_')[1].replace('%', '')))
-    uo_model_path = max(uo_models, key=lambda x: float(x.split('_')[1].replace('%', '')))
+    ml_model_path = max(ml_models, key=lambda x: float(os.path.basename(x).split('_')[1].replace('%', '')))
+    uo_model_path = max(uo_models, key=lambda x: float(os.path.basename(x).split('_')[1].replace('%', '')))
     
     xgb_ml = xgb.Booster()
     xgb_ml.load_model(ml_model_path)
