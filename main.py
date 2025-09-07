@@ -13,15 +13,28 @@ from src.Utils.Dictionaries import team_index_current, nfl_team_index_current
 from src.Utils.tools import create_todays_games_from_odds, get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 from src.Utils.nfl_tools import get_nfl_json_data, to_nfl_data_frame, get_nfl_current_week
 
-todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2024/scores/00_todays_scores.json'
-data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
-           'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \
-           'GameSegment=&LastNGames=0&LeagueID=00&Location=&' \
-           'MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&' \
-           'PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&' \
-           'PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&' \
-           'Season=2024-25&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
-           'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
+def get_current_nba_season():
+    """Get current NBA season in format YYYY for API URLs and YYYY-YY for stats API"""
+    now = datetime.now()
+    if now.month >= 10:
+        current_year = now.year
+        next_year = now.year + 1
+    else:
+        current_year = now.year - 1
+        next_year = now.year
+    return str(current_year), f"{current_year}-{str(next_year)[2:]}"
+
+season_year, season_range = get_current_nba_season()
+
+todays_games_url = f'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/{season_year}/scores/00_todays_scores.json'
+data_url = f'https://stats.nba.com/stats/leaguedashteamstats?' \
+           f'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \
+           f'GameSegment=&LastNGames=0&LeagueID=00&Location=&' \
+           f'MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&' \
+           f'PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&' \
+           f'PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&' \
+           f'Season={season_range}&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
+           f'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
 
 # nfl_data_url = 'https://api.sportsdata.io/v3/nfl/stats/json/TeamSeasonStats/2024'  # Deprecated
 
@@ -54,7 +67,21 @@ def createTodaysGames(games, df, odds):
             away_team_odds.append(input(away_team + ' odds: '))
 
         # calculate days rest for both teams
-        schedule_df = pd.read_csv('Data/nba-2024-UTC.csv', parse_dates=['Date'], date_format='%d/%m/%Y %H:%M')
+        try:
+            schedule_df = pd.read_csv(f'Data/nba-{season_year}-UTC.csv', parse_dates=['Date'], date_format='%d/%m/%Y %H:%M')
+        except FileNotFoundError:
+            print(f"Warning: Schedule file Data/nba-{season_year}-UTC.csv not found. Using default rest days.")
+            home_days_off = timedelta(days=2)
+            away_days_off = timedelta(days=2)
+            home_team_days_rest.append(home_days_off.days)
+            away_team_days_rest.append(away_days_off.days)
+            home_team_series = df.iloc[team_index_current.get(home_team)]
+            away_team_series = df.iloc[team_index_current.get(away_team)]
+            stats = pd.concat([home_team_series, away_team_series])
+            stats['Days-Rest-Home'] = home_days_off.days
+            stats['Days-Rest-Away'] = away_days_off.days
+            match_data.append(stats)
+            continue
         home_games = schedule_df[(schedule_df['Home Team'] == home_team) | (schedule_df['Away Team'] == home_team)]
         away_games = schedule_df[(schedule_df['Home Team'] == away_team) | (schedule_df['Away Team'] == away_team)]
         previous_home_games = home_games.loc[schedule_df['Date'] <= datetime.today()].sort_values('Date',ascending=False).head(1)['Date']
@@ -207,7 +234,7 @@ def main():
             odds = SbrOddsProvider(sportsbook=args.odds, sport="NBA").get_odds()
             games = create_todays_games_from_odds(odds)
             if len(games) == 0:
-                print("No games found.")
+                print("No NBA games scheduled for today.")
                 return
             if (games[0][0] + ':' + games[0][1]) not in list(odds.keys()):
                 print(games[0][0] + ':' + games[0][1])
@@ -221,7 +248,13 @@ def main():
                     print(f"{away_team} ({odds[g][away_team]['money_line_odds']}) @ {home_team} ({odds[g][home_team]['money_line_odds']})")
         else:
             data = get_todays_games_json(todays_games_url)
+            if not data:
+                print("No NBA games scheduled for today, or unable to fetch game data.")
+                return
             games = create_todays_games(data)
+            if len(games) == 0:
+                print("No NBA games scheduled for today.")
+                return
         data = get_json_data(data_url)
         df = to_data_frame(data)
         data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = createTodaysGames(games, df, odds)
